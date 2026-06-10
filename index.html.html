@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Takenos · Clasificador de Sponsorships</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 12px}
+.app{background:#fff;border-radius:16px;width:100%;max-width:560px;border:1px solid #e0dfd8;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.screen{display:none}.screen.active{display:block}
+.header{padding:20px 24px 14px;border-bottom:1px solid #eeede8}
+.logo{font-size:11px;font-weight:600;color:#888780;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+h1{font-size:18px;font-weight:500;color:#1a1a18}
+.subtitle{font-size:13px;color:#888780;margin-top:3px}
+.progress{height:3px;background:#eeede8}
+.progress-fill{height:100%;background:#1a1a18;transition:width .3s ease;border-radius:0 2px 2px 0}
+.body{padding:20px 24px}
+.q-label{font-size:14px;font-weight:500;color:#1a1a18;margin-bottom:6px;line-height:1.5}
+.q-hint{font-size:12px;color:#888780;margin-bottom:10px;line-height:1.4}
+.q-context{font-size:11px;background:#f5f4f0;border:1px solid #eeede8;border-radius:8px;padding:8px 12px;color:#888780;margin-bottom:10px;line-height:1.5}
+.options{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e0dfd8;border-radius:10px;cursor:pointer;transition:all .12s;background:#fff}
+.opt:hover{border-color:#b4b2a9;background:#f9f8f5}
+.opt.selected{border-color:#1a1a18;background:#f5f4f0}
+.opt-radio{width:16px;height:16px;border:1.5px solid #b4b2a9;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.opt.selected .opt-radio{border-color:#1a1a18;background:#1a1a18}
+.opt.selected .opt-radio::after{content:'';width:5px;height:5px;border-radius:50%;background:#fff}
+.opt-label{font-size:13px;color:#3d3d3a;line-height:1.4}
+.opt.selected .opt-label{color:#1a1a18;font-weight:500}
+.input-text{width:100%;padding:10px 14px;border:1px solid #e0dfd8;border-radius:10px;font-size:14px;background:#fff;color:#1a1a18;outline:none;margin-top:8px;font-family:inherit}
+.input-text:focus{border-color:#888780}
+.footer{padding:14px 24px;border-top:1px solid #eeede8;display:flex;justify-content:space-between;align-items:center}
+.step-count{font-size:12px;color:#888780}
+.btn-group{display:flex;gap:8px}
+.btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid #e0dfd8;background:#fff;color:#3d3d3a;transition:all .12s;font-family:inherit}
+.btn:hover{background:#f5f4f0;border-color:#b4b2a9}
+.btn.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.btn.primary:hover{background:#2c2c2a}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+/* Results */
+.result-header{padding:20px 24px 14px;border-bottom:1px solid #eeede8}
+.event-tag{font-size:11px;color:#888780;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.result-title{font-size:17px;font-weight:500}
+.result-date{font-size:13px;color:#888780;margin-top:2px}
+.verdict-section{padding:16px 24px 0}
+.verdict-label{font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.verdict-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.vc{padding:12px 10px;border-radius:10px;border:1px solid #e0dfd8;text-align:center}
+.vc.yes{background:#eaf3de;border-color:#c0dd97}
+.vc.no{background:#fcebeb;border-color:#f7c1c1}
+.vc.maybe{background:#faeeda;border-color:#fac775}
+.vc-icon{font-size:18px;margin-bottom:4px}
+.vc-name{font-size:10px;color:#888780;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;line-height:1.3}
+.vc-verdict{font-size:12px;font-weight:600}
+.vc.yes .vc-verdict{color:#3b6d11}
+.vc.no .vc-verdict{color:#a32d2d}
+.vc.maybe .vc-verdict{color:#854f0b}
+.score-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.score-name{font-size:12px;color:#3d3d3a;width:90px;flex-shrink:0;font-weight:500}
+.score-track{flex:1;height:6px;background:#eeede8;border-radius:3px;overflow:hidden}
+.score-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.score-fill.takecard{background:#534AB7}
+.score-fill.dolarizate{background:#0F6E56}
+.score-fill.exworkers{background:#993C1D}
+.score-num{font-size:11px;color:#888780;width:32px;text-align:right;flex-shrink:0}
+/* Context data strip */
+.context-strip{margin:14px 24px 0;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ctx-pill{background:#f5f4f0;border:1px solid #eeede8;border-radius:8px;padding:7px 10px;font-size:11px;color:#888780}
+.ctx-pill strong{display:block;font-size:12px;color:#3d3d3a;font-weight:500;margin-bottom:1px}
+.reasons-section{padding:14px 24px 0}
+.reasons-label{font-size:11px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.reason{display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;font-size:12px;color:#5f5e5a}
+.rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.rdot.g{background:#3b6d11}.rdot.r{background:#a32d2d}.rdot.y{background:#854f0b}
+.sheet-section{margin:14px 24px 0;padding:14px;background:#f9f8f5;border-radius:10px;border:1px solid #eeede8}
+.sheet-h{font-size:12px;font-weight:600;color:#3d3d3a;margin-bottom:10px}
+.sheet-row{display:flex;justify-content:space-between;font-size:12px;color:#888780;padding:4px 0;border-bottom:1px solid #eeede8}
+.sheet-row:last-child{border:none}
+.sv{font-weight:500;color:#1a1a18;text-align:right;max-width:60%;word-break:break-word}
+.sheet-hint{font-size:11px;color:#b4b2a9;margin-top:8px}
+.actions{display:flex;gap:8px;padding:14px 24px;border-top:1px solid #eeede8;margin-top:14px}
+.action-btn{flex:1;padding:10px;font-size:13px;font-weight:500;border-radius:10px;border:1px solid #e0dfd8;background:#fff;cursor:pointer;color:#3d3d3a;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;transition:all .12s}
+.action-btn:hover{background:#f5f4f0;border-color:#b4b2a9}
+.action-btn.primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.action-btn.primary:hover{background:#2c2c2a}
+/* Sheet sync status */
+.sync-banner{margin:0 24px;padding:10px 14px;border-radius:10px;font-size:12px;display:none;align-items:center;gap:8px;margin-top:10px}
+.sync-banner.sending{display:flex;background:#e6f1fb;border:1px solid #b5d4f4;color:#185fa5}
+.sync-banner.ok{display:flex;background:#eaf3de;border:1px solid #c0dd97;color:#3b6d11}
+.sync-banner.err{display:flex;background:#faeeda;border:1px solid #fac775;color:#854f0b}
+/* Config screen */
+.config-screen{padding:20px 24px}
+.config-screen h2{font-size:15px;font-weight:500;margin-bottom:4px}
+.config-screen p{font-size:12px;color:#888780;margin-bottom:14px;line-height:1.5}
+.config-screen label{font-size:12px;font-weight:500;display:block;margin-bottom:5px;color:#3d3d3a}
+.config-screen input{width:100%;padding:9px 12px;border:1px solid #e0dfd8;border-radius:8px;font-size:12px;color:#1a1a18;font-family:inherit;outline:none;background:#fff}
+.config-screen input:focus{border-color:#888780}
+.config-actions{display:flex;gap:8px;margin-top:14px}
+.skip-link{font-size:11px;color:#888780;text-decoration:underline;cursor:pointer;margin-top:10px;display:inline-block}
+code{font-size:11px;background:#f5f4f0;padding:2px 6px;border-radius:4px;color:#534AB7;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- CONFIG SCREEN -->
+<div id="screen-config" class="screen active">
+  <div class="header">
+    <div class="logo">Takenos · Marketing</div>
+    <h1>Clasificador de sponsorships</h1>
+    <div class="subtitle">Configuración inicial — solo una vez</div>
+  </div>
+  <div class="config-screen">
+    <h2>Conectar con Google Sheets</h2>
+    <p>Para que los resultados se guarden automáticamente, pegá la URL de tu Google Apps Script. Si no la tenés todavía, <span class="skip-link" onclick="skipConfig()">saltear y usar modo manual</span>.</p>
+
+    <div style="background:#f5f4f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#5f5e5a;line-height:1.6">
+      <strong style="display:block;margin-bottom:6px;color:#1a1a18">Cómo obtener la URL (5 minutos):</strong>
+      1. Abrí tu Google Sheet → Extensiones → Apps Script<br>
+      2. Pegá el código del archivo <code>takenos_apps_script.js</code><br>
+      3. Hacé clic en Implementar → Nueva implementación → Aplicación web<br>
+      4. Ejecutar como: <em>Yo</em> · Acceso: <em>Cualquier persona</em><br>
+      5. Copiá la URL que aparece y pegála abajo
+    </div>
+
+    <label>URL de Apps Script</label>
+    <input type="text" id="script-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="onUrlInput(this.value)">
+    <div class="config-actions">
+      <button class="btn primary" id="btn-save-url" onclick="saveUrl()" disabled style="flex:1">Guardar y continuar →</button>
+    </div>
+    <span class="skip-link" onclick="skipConfig()">Saltear — voy a copiar y pegar manualmente</span>
+  </div>
+</div>
+
+<!-- FORM SCREEN -->
+<div id="screen-form" class="screen">
+  <div class="header">
+    <div class="logo">Takenos · Marketing</div>
+    <h1>Clasificador de sponsorships</h1>
+    <div class="subtitle">Evaluá si un evento aplica para nuestros 3 objetivos</div>
+  </div>
+  <div class="progress"><div class="progress-fill" id="pfill" style="width:0%"></div></div>
+  <div class="body" id="qarea"></div>
+  <div class="footer">
+    <span class="step-count" id="stepcount">Pregunta 1 de 12</span>
+    <div class="btn-group">
+      <button class="btn" id="btnback" onclick="goBack()" style="display:none">← Atrás</button>
+      <button class="btn primary" id="btnnext" onclick="goNext()" disabled>Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="screen-result" class="screen">
+  <div class="result-header">
+    <div class="event-tag" id="res-evname"></div>
+    <div class="result-title">Resultado del análisis</div>
+    <div class="result-date" id="res-date"></div>
+  </div>
+  <div class="verdict-section">
+    <div class="verdict-label">Recomendación por objetivo</div>
+    <div class="verdict-cards" id="verdict-cards"></div>
+    <div style="margin-top:14px">
+      <div class="verdict-label" style="margin-bottom:8px">Score detallado</div>
+      <div id="score-bars"></div>
+    </div>
+  </div>
+  <div class="context-strip" id="context-strip"></div>
+  <div class="reasons-section">
+    <div class="reasons-label">Por qué</div>
+    <div id="reasons-list"></div>
+  </div>
+  <div class="sheet-section">
+    <div class="sheet-h">📋 Registro</div>
+    <div id="sheet-rows"></div>
+    <div class="sheet-hint" id="sheet-hint-text">Los datos también se enviaron automáticamente al Sheet.</div>
+  </div>
+  <div class="sync-banner" id="sync-banner"></div>
+  <div class="actions">
+    <button class="action-btn" onclick="copySheet()" id="copybtn">📋 Copiar fila</button>
+    <button class="action-btn primary" onclick="resetForm()">Nuevo evento →</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const STORAGE_KEY_URL = 'takenos_script_url';
+let SCRIPT_URL = localStorage.getItem(STORAGE_KEY_URL) || '';
+
+function onUrlInput(v){
+  document.getElementById('btn-save-url').disabled = !v.includes('script.google.com');
+}
+function saveUrl(){
+  SCRIPT_URL = document.getElementById('script-url').value.trim();
+  localStorage.setItem(STORAGE_KEY_URL, SCRIPT_URL);
+  startForm();
+}
+function skipConfig(){ SCRIPT_URL=''; startForm(); }
+function startForm(){
+  document.getElementById('screen-config').classList.remove('active');
+  document.getElementById('screen-form').classList.add('active');
+  renderQ();
+}
+
+// If URL already saved, go straight to form
+if(SCRIPT_URL){ startForm(); }
+
+// ─── QUESTIONS ──────────────────────────────────────────────────────────────
+const QS = [
+  {
+    id:'nombre',
+    label:'¿Cómo se llama el evento?',
+    type:'text',
+    placeholder:'Ej: Feria del Emprendedor La Paz 2025'
+  },
+  {
+    id:'tipo',
+    label:'¿Qué tipo de evento es?',
+    type:'single',
+    opts:[
+      {v:'tech',        l:'Tech / startups / innovación'},
+      {v:'emprendedores',l:'Emprendedores / negocios'},
+      {v:'educativo',   l:'Educativo / universitario'},
+      {v:'cultural',    l:'Cultural / social / deportivo'},
+      {v:'corporativo', l:'Corporativo / institucional'},
+      {v:'otro',        l:'Otro'},
+    ]
+  },
+  {
+    id:'historial',
+    label:'¿El evento tiene historial previo?',
+    hint:'Ayuda a estimar riesgo y credibilidad del sponsor',
+    type:'single',
+    opts:[
+      {v:'consolidado', l:'Sí, es un evento consolidado (3+ ediciones)'},
+      {v:'reciente',    l:'Sí, tiene 1 o 2 ediciones anteriores'},
+      {v:'nuevo',       l:'No, es la primera edición'},
+      {v:'sin_info',    l:'No lo sé aún'},
+    ]
+  },
+  {
+    id:'asistentes',
+    label:'¿Cuántos asistentes se esperan?',
+    type:'single',
+    opts:[
+      {v:'pequeno', l:'Menos de 100'},
+      {v:'mediano', l:'100 – 500'},
+      {v:'grande',  l:'500 – 2.000'},
+      {v:'masivo',  l:'Más de 2.000'},
+    ]
+  },
+  {
+    id:'edad',
+    label:'¿Cuál es el perfil de edad mayoritario?',
+    type:'single',
+    opts:[
+      {v:'jovenes', l:'18 – 30 años'},
+      {v:'adultos', l:'31 – 50 años'},
+      {v:'mixto',   l:'Mixto / variado'},
+      {v:'mayores', l:'Mayores de 50'},
+    ]
+  },
+  {
+    id:'ocupacion',
+    label:'¿A qué se dedican principalmente los asistentes?',
+    hint:'Elegí la que mejor describe al grueso de la audiencia',
+    type:'single',
+    opts:[
+      {v:'emprendedores',   l:'Emprendedores / dueños de negocio'},
+      {v:'profesionales',   l:'Profesionales en relación de dependencia'},
+      {v:'freelancers',     l:'Freelancers / independientes / remotos'},
+      {v:'universitarios',  l:'Estudiantes universitarios'},
+      {v:'comerciantes',    l:'Comerciantes / microempresarios'},
+      {v:'mixto',           l:'Mixto / variado'},
+    ]
+  },
+  {
+    id:'exterior',
+    label:'¿Los asistentes suelen tener vínculos con el exterior?',
+    hint:'Familiares en otro país, trabajo remoto, exportación de servicios',
+    type:'single',
+    opts:[
+      {v:'alto',    l:'Sí, claramente (diáspora, freelancers, exportadores)'},
+      {v:'medio',   l:'Algunos, es posible'},
+      {v:'bajo',    l:'Poco probable'},
+      {v:'ninguno', l:'No, es mercado 100% local'},
+    ]
+  },
+  {
+    id:'activacion',
+    label:'¿El formato permite activación física presencial?',
+    hint:'Stand, punto de entrega, interacción cara a cara',
+    type:'single',
+    opts:[
+      {v:'stand',          l:'Sí, podemos tener stand propio'},
+      {v:'sponsor_pasivo', l:'Solo mención / logo (sponsor pasivo)'},
+      {v:'digital',        l:'Es un evento digital / virtual'},
+      {v:'mixto',          l:'Mixto, hay componente presencial'},
+    ]
+  },
+  {
+    id:'ahorros',
+    label:'¿Los asistentes probablemente tienen ahorros informales o en efectivo?',
+    hint:'Clave para el objetivo Dolarizate',
+    type:'single',
+    opts:[
+      {v:'alto',  l:'Muy probable (emprendedores, comerciantes, independientes)'},
+      {v:'medio', l:'Algunos sí'},
+      {v:'bajo',  l:'Poco probable'},
+      {v:'no',    l:'No aplica'},
+    ]
+  },
+  {
+    id:'reach_digital',
+    label:'¿El evento tiene presencia digital propia?',
+    hint:'Redes sociales, streaming, cobertura de medios',
+    context:'Este dato es de contexto — no afecta el score de objetivos, pero lo registramos para evaluar visibilidad de marca.',
+    type:'single',
+    opts:[
+      {v:'alto',    l:'Sí, con comunidad grande (+10k seguidores o cobertura en medios)'},
+      {v:'medio',   l:'Presencia moderada (1k – 10k seguidores)'},
+      {v:'bajo',    l:'Presencia pequeña (menos de 1k)'},
+      {v:'ninguno', l:'Sin presencia digital propia'},
+    ]
+  },
+  {
+    id:'ciudad',
+    label:'¿Dónde se realiza el evento?',
+    type:'single',
+    opts:[
+      {v:'lapaz',   l:'La Paz / El Alto'},
+      {v:'cbba',    l:'Cochabamba'},
+      {v:'scz',     l:'Santa Cruz'},
+      {v:'otro_bo', l:'Otra ciudad de Bolivia'},
+      {v:'externo', l:'Fuera de Bolivia'},
+    ]
+  },
+  {
+    id:'presupuesto',
+    label:'¿Cuánto piden por el sponsorship?',
+    type:'single',
+    opts:[
+      {v:'sin_costo', l:'Sin costo / alianza / canje'},
+      {v:'bajo',      l:'Menos de $500 USD'},
+      {v:'medio',     l:'$500 – $2.000 USD'},
+      {v:'alto',      l:'Más de $2.000 USD'},
+      {v:'sin_info',  l:'No lo sé aún'},
+    ]
+  },
+];
+
+let cur=0, ans={};
+
+function renderQ(){
+  const q=QS[cur];
+  const pct=Math.round((cur/QS.length)*100);
+  document.getElementById('pfill').style.width=pct+'%';
+  document.getElementById('stepcount').textContent=`Pregunta ${cur+1} de ${QS.length}`;
+  document.getElementById('btnback').style.display=cur>0?'block':'none';
+  const btn=document.getElementById('btnnext');
+  btn.textContent=cur===QS.length-1?'Ver resultado →':'Siguiente →';
+
+  let h=`<div class="q-label">${q.label}</div>`;
+  if(q.hint) h+=`<div class="q-hint">${q.hint}</div>`;
+  if(q.context) h+=`<div class="q-context">ℹ️ ${q.context}</div>`;
+
+  if(q.type==='text'){
+    h+=`<input class="input-text" type="text" id="tinput" placeholder="${q.placeholder}" value="${ans[q.id]||''}" oninput="onText(this.value)">`;
+  } else {
+    h+='<div class="options">';
+    q.opts.forEach(o=>{
+      const sel=ans[q.id]===o.v;
+      h+=`<div class="opt${sel?' selected':''}" onclick="selOpt('${o.v}',this)">
+        <div class="opt-radio"></div>
+        <div class="opt-label">${o.l}</div>
+      </div>`;
+    });
+    h+='</div>';
+  }
+  document.getElementById('qarea').innerHTML=h;
+
+  if(q.type==='text'){
+    btn.disabled=!(ans[q.id]&&ans[q.id].trim().length>=3);
+    const inp=document.getElementById('tinput');
+    if(inp) inp.focus();
+  } else {
+    btn.disabled=!ans[q.id];
+  }
+}
+
+function onText(v){ ans[QS[cur].id]=v; document.getElementById('btnnext').disabled=v.trim().length<3; }
+
+function selOpt(v,el){
+  ans[QS[cur].id]=v;
+  document.querySelectorAll('.opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnnext').disabled=false;
+}
+
+function goNext(){ if(cur<QS.length-1){cur++;renderQ();}else{showResult();} }
+function goBack(){ if(cur>0){cur--;renderQ();} }
+
+// ─── CLASSIFY ───────────────────────────────────────────────────────────────
+function classify(){
+  const a=ans;
+  let tc=0,dol=0,exw=0;
+  const reasons=[];
+
+  // TAKECARD FÍSICA
+  if(a.activacion==='stand'){tc+=30;reasons.push({o:'takecard',t:'g',tx:'Stand propio → ideal para entregar la Takecard en persona'});}
+  else if(a.activacion==='mixto'){tc+=15;reasons.push({o:'takecard',t:'y',tx:'Formato mixto → activación física posible pero limitada'});}
+  else if(a.activacion==='sponsor_pasivo'){tc+=5;reasons.push({o:'takecard',t:'r',tx:'Solo sponsor pasivo → poco espacio para entrega de tarjetas'});}
+  else if(a.activacion==='digital'){reasons.push({o:'takecard',t:'r',tx:'Evento digital → sin posibilidad de activación física'});}
+
+  if(a.asistentes==='masivo'){tc+=22;reasons.push({o:'takecard',t:'g',tx:'Evento masivo → alto volumen de contacto posible'});}
+  else if(a.asistentes==='grande'){tc+=15;}
+  else if(a.asistentes==='mediano'){tc+=8;}
+
+  if(a.edad==='jovenes'||a.edad==='mixto'){tc+=14;reasons.push({o:'takecard',t:'g',tx:'Perfil joven/mixto → mayor apertura a productos fintech'});}
+  if(a.tipo==='tech'||a.tipo==='emprendedores'){tc+=14;}
+  if(a.ciudad==='lapaz'){tc+=10;reasons.push({o:'takecard',t:'g',tx:'La Paz / El Alto → mercado principal de Takenos'});}
+  if(a.historial==='consolidado'){tc+=8;reasons.push({o:'takecard',t:'g',tx:'Evento consolidado → mayor asistencia y menor riesgo'});}
+  if(a.ocupacion==='freelancers'||a.ocupacion==='universitarios'){tc+=8;}
+
+  // DOLARIZATE
+  if(a.ahorros==='alto'){dol+=35;reasons.push({o:'dolarizate',t:'g',tx:'Perfil con ahorros informales → audiencia ideal para Dolarizate'});}
+  else if(a.ahorros==='medio'){dol+=18;reasons.push({o:'dolarizate',t:'y',tx:'Algunos asistentes con ahorros → oportunidad parcial'});}
+  else{reasons.push({o:'dolarizate',t:'r',tx:'Bajo potencial de ahorros → poco fit para Dolarizate'});}
+
+  if(a.ocupacion==='emprendedores'||a.ocupacion==='comerciantes'){dol+=28;reasons.push({o:'dolarizate',t:'g',tx:'Emprendedores / comerciantes → alta propensión a dolarizar ahorros'});}
+  else if(a.ocupacion==='profesionales'){dol+=16;reasons.push({o:'dolarizate',t:'y',tx:'Profesionales en dependencia → propensión media a dolarizar'});}
+  else if(a.ocupacion==='mixto'){dol+=12;}
+
+  if(a.tipo==='emprendedores'||a.tipo==='corporativo'){dol+=12;}
+  if(a.edad==='adultos'||a.edad==='mixto'){dol+=10;}
+
+  // EX-WORKERS / COBRAR DEL EXTERIOR
+  if(a.exterior==='alto'){exw+=40;reasons.push({o:'exworkers',t:'g',tx:'Vínculos externos claros → fit muy alto para cobrar del exterior'});}
+  else if(a.exterior==='medio'){exw+=22;reasons.push({o:'exworkers',t:'y',tx:'Algunos vínculos externos → fit moderado'});}
+  else{reasons.push({o:'exworkers',t:'r',tx:'Sin vínculos externos → difícil activar propuesta internacional'});}
+
+  if(a.ocupacion==='freelancers'){exw+=28;reasons.push({o:'exworkers',t:'g',tx:'Audiencia freelancer → máximo fit para cobrar del exterior'});}
+  else if(a.ocupacion==='profesionales'){exw+=12;}
+  if(a.tipo==='tech'||a.tipo==='educativo'){exw+=15;reasons.push({o:'exworkers',t:'g',tx:'Tech/educativo → concentra profesionales con trabajo remoto'});}
+  if(a.edad==='jovenes'){exw+=12;reasons.push({o:'exworkers',t:'g',tx:'Audiencia joven → mayor proporción de trabajadores remotos'});}
+
+  tc=Math.min(tc,100); dol=Math.min(dol,100); exw=Math.min(exw,100);
+
+  const verd=s=>s>=55?'yes':s>=30?'maybe':'no';
+  const lbl=s=>s>=55?'SÍ aplica':s>=30?'Evaluar':'NO aplica';
+
+  return {
+    scores:{tc,dol,exw},
+    verdicts:{tc:verd(tc),dol:verd(dol),exw:verd(exw)},
+    labels:{tc:lbl(tc),dol:lbl(dol),exw:lbl(exw)},
+    reasons
+  };
+}
+
+// ─── SHOW RESULT ─────────────────────────────────────────────────────────────
+function showResult(){
+  const r=classify();
+  document.getElementById('screen-form').classList.remove('active');
+  document.getElementById('screen-result').classList.add('active');
+
+  const now=new Date();
+  const fecha=now.toLocaleDateString('es-BO',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('res-evname').textContent=ans.nombre;
+  document.getElementById('res-date').textContent=fecha;
+
+  const objs=[
+    {key:'tc', name:'Takecard física',    shortname:'Takecard'},
+    {key:'dol',name:'Dolarizate',         shortname:'Dolarizate'},
+    {key:'exw',name:'Cobrar del exterior',shortname:'Exterior'},
+  ];
+
+  // Verdict cards
+  let vhtml='';
+  objs.forEach(o=>{
+    const v=r.verdicts[o.key];
+    const icon=v==='yes'?'✓':v==='maybe'?'∼':'✕';
+    vhtml+=`<div class="vc ${v}">
+      <div class="vc-icon">${icon}</div>
+      <div class="vc-name">${o.name}</div>
+      <div class="vc-verdict">${r.labels[o.key]}</div>
+    </div>`;
+  });
+  document.getElementById('verdict-cards').innerHTML=vhtml;
+
+  // Score bars
+  const barclasses={tc:'takecard',dol:'dolarizate',exw:'exworkers'};
+  let bhtml='';
+  objs.forEach(o=>{
+    bhtml+=`<div class="score-bar-row">
+      <div class="score-name">${o.shortname}</div>
+      <div class="score-track"><div class="score-fill ${barclasses[o.key]}" style="width:${r.scores[o.key]}%"></div></div>
+      <div class="score-num">${r.scores[o.key]}pts</div>
+    </div>`;
+  });
+  document.getElementById('score-bars').innerHTML=bhtml;
+
+  // Context pills (reach digital + historial — no afectan score)
+  const reachMap={alto:'Reach alto (+10k)',medio:'Reach medio (1k–10k)',bajo:'Reach pequeño (<1k)',ninguno:'Sin reach digital'};
+  const histMap={consolidado:'Evento consolidado (3+)',reciente:'1–2 ediciones previas',nuevo:'Primera edición',sin_info:'Historial desconocido'};
+  document.getElementById('context-strip').innerHTML=`
+    <div class="ctx-pill"><strong>Reach digital</strong>${reachMap[ans.reach_digital]||'—'}</div>
+    <div class="ctx-pill"><strong>Historial del evento</strong>${histMap[ans.historial]||'—'}</div>`;
+
+  // Reasons
+  let rehtml='';
+  r.reasons.slice(0,8).forEach(re=>{
+    rehtml+=`<div class="reason"><div class="rdot ${re.t}"></div><div>${re.tx}</div></div>`;
+  });
+  document.getElementById('reasons-list').innerHTML=rehtml;
+
+  // Sheet data
+  const ciudadMap={lapaz:'La Paz / El Alto',cbba:'Cochabamba',scz:'Santa Cruz',otro_bo:'Otra ciudad Bolivia',externo:'Fuera de Bolivia'};
+  const activMap={stand:'Stand propio',sponsor_pasivo:'Sponsor pasivo',digital:'Digital',mixto:'Mixto'};
+  const presupMap={sin_costo:'Sin costo / canje',bajo:'< $500 USD',medio:'$500–$2.000 USD',alto:'> $2.000 USD',sin_info:'Sin datos'};
+  const ocuMap={emprendedores:'Emprendedores',profesionales:'Profesionales',freelancers:'Freelancers / remotos',universitarios:'Universitarios',comerciantes:'Comerciantes',mixto:'Mixto'};
+
+  const cols=[
+    ['Fecha',           fecha],
+    ['Evento',          ans.nombre],
+    ['Ciudad',          ciudadMap[ans.ciudad]||ans.ciudad],
+    ['Tipo',            ans.tipo],
+    ['Historial',       histMap[ans.historial]||ans.historial],
+    ['Asistentes',      ans.asistentes],
+    ['Ocupación',       ocuMap[ans.ocupacion]||ans.ocupacion],
+    ['Activación',      activMap[ans.activacion]||ans.activacion],
+    ['Reach digital',   reachMap[ans.reach_digital]||ans.reach_digital],
+    ['Presupuesto',     presupMap[ans.presupuesto]||ans.presupuesto],
+    ['Takecard física', `${r.labels.tc} (${r.scores.tc}pts)`],
+    ['Dolarizate',      `${r.labels.dol} (${r.scores.dol}pts)`],
+    ['Cobrar exterior', `${r.labels.exw} (${r.scores.exw}pts)`],
+  ];
+
+  let shtml='';
+  cols.forEach(([k,v])=>{
+    shtml+=`<div class="sheet-row"><span>${k}</span><span class="sv">${v}</span></div>`;
+  });
+  document.getElementById('sheet-rows').innerHTML=shtml;
+  window._cols=cols;
+
+  // Auto-send to Sheet if URL configured
+  if(SCRIPT_URL){
+    sendToSheet(cols);
+    document.getElementById('sheet-hint-text').textContent='Enviando al Sheet automáticamente...';
+  } else {
+    document.getElementById('sheet-hint-text').textContent='Copiá y pegá en tu planilla de registro.';
+  }
+}
+
+// ─── GOOGLE SHEETS SYNC ──────────────────────────────────────────────────────
+function sendToSheet(cols){
+  const banner=document.getElementById('sync-banner');
+  banner.className='sync-banner sending';
+  banner.textContent='⏳ Enviando al Sheet...';
+
+  const payload={values: cols.map(([k,v])=>({col:k,val:v}))};
+
+  fetch(SCRIPT_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  })
+  .then(()=>{
+    banner.className='sync-banner ok';
+    banner.textContent='✓ Guardado en Google Sheet automáticamente';
+    document.getElementById('sheet-hint-text').textContent='Los datos se guardaron en el Sheet.';
+  })
+  .catch(()=>{
+    banner.className='sync-banner err';
+    banner.textContent='⚠ No se pudo conectar al Sheet — copiá la fila manualmente';
+    document.getElementById('sheet-hint-text').textContent='Copiá la fila y pegála en el Sheet manualmente.';
+  });
+}
+
+function copySheet(){
+  const row=window._cols.map(([,v])=>v).join('\t');
+  navigator.clipboard.writeText(row).then(()=>{
+    const b=document.getElementById('copybtn');
+    b.textContent='✓ ¡Copiado!';
+    setTimeout(()=>{b.textContent='📋 Copiar fila';},2500);
+  }).catch(()=>{
+    prompt('Copiá esta fila:',window._cols.map(([,v])=>v).join('\t'));
+  });
+}
+
+function resetForm(){
+  cur=0; ans={};
+  document.getElementById('screen-result').classList.remove('active');
+  document.getElementById('screen-form').classList.add('active');
+  renderQ();
+}
+</script>
+</body>
+</html>
