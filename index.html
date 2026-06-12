@@ -205,8 +205,10 @@ function startForm(){
   renderQ();
 }
 
-// If URL already saved, go straight to form
-if(SCRIPT_URL){ startForm(); }
+// If URL already saved, go straight to form (wait for DOM)
+document.addEventListener('DOMContentLoaded', function(){
+  if(SCRIPT_URL){ startForm(); }
+});
 
 // ─── QUESTIONS ──────────────────────────────────────────────────────────────
 const QS = [
@@ -502,7 +504,7 @@ function showResult(){
   });
   document.getElementById('score-bars').innerHTML=bhtml;
 
-  // Context pills (reach digital + historial — no afectan score)
+  // Context pills
   const reachMap={alto:'Reach alto (+10k)',medio:'Reach medio (1k–10k)',bajo:'Reach pequeño (<1k)',ninguno:'Sin reach digital'};
   const histMap={consolidado:'Evento consolidado (3+)',reciente:'1–2 ediciones previas',nuevo:'Primera edición',sin_info:'Historial desconocido'};
   document.getElementById('context-strip').innerHTML=`
@@ -521,17 +523,19 @@ function showResult(){
   const activMap={stand:'Stand propio',sponsor_pasivo:'Sponsor pasivo',digital:'Digital',mixto:'Mixto'};
   const presupMap={sin_costo:'Sin costo / canje',bajo:'< $500 USD',medio:'$500–$2.000 USD',alto:'> $2.000 USD',sin_info:'Sin datos'};
   const ocuMap={emprendedores:'Emprendedores',profesionales:'Profesionales',freelancers:'Freelancers / remotos',universitarios:'Universitarios',comerciantes:'Comerciantes',mixto:'Mixto'};
+  const histMap2={consolidado:'Evento consolidado (3+)',reciente:'1–2 ediciones previas',nuevo:'Primera edición',sin_info:'Historial desconocido'};
+  const reachMap2={alto:'Reach alto (+10k)',medio:'Reach medio (1k–10k)',bajo:'Reach pequeño (<1k)',ninguno:'Sin reach digital'};
 
   const cols=[
     ['Fecha',           fecha],
     ['Evento',          ans.nombre],
     ['Ciudad',          ciudadMap[ans.ciudad]||ans.ciudad],
     ['Tipo',            ans.tipo],
-    ['Historial',       histMap[ans.historial]||ans.historial],
+    ['Historial',       histMap2[ans.historial]||ans.historial],
     ['Asistentes',      ans.asistentes],
     ['Ocupación',       ocuMap[ans.ocupacion]||ans.ocupacion],
     ['Activación',      activMap[ans.activacion]||ans.activacion],
-    ['Reach digital',   reachMap[ans.reach_digital]||ans.reach_digital],
+    ['Reach digital',   reachMap2[ans.reach_digital]||ans.reach_digital],
     ['Presupuesto',     presupMap[ans.presupuesto]||ans.presupuesto],
     ['Takecard física', `${r.labels.tc} (${r.scores.tc}pts)`],
     ['Dolarizate',      `${r.labels.dol} (${r.scores.dol}pts)`],
